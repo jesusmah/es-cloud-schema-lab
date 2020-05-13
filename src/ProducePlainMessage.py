@@ -18,10 +18,6 @@ except KeyError:
     print("[ERROR] - The KAFKA_APIKEY environment variable needs to be set")
     exit(1)
 
-
-####################### VARIABLES #######################
-TOPIC_NAME="test"
-
 ####################### FUNCTIONS #######################
 # Create a default container
 def createEvent():
@@ -44,7 +40,7 @@ def parseArguments():
     if len(sys.argv) == 2:
         TOPIC_NAME = sys.argv[1]
     else:
-        print("[ERROR] - The producePlainMessage.py script expects one argument: The Kafka topic to publish the message to")
+        print("[ERROR] - The ProducePlainMessage.py script expects one argument: The Kafka topic to publish the message to")
         exit(1)
 
 ####################### MAIN #######################

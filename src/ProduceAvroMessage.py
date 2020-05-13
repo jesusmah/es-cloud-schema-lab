@@ -1,8 +1,8 @@
 import os, time, sys, json
 from kafka.KcAvroProducer import KafkaProducer
-from utils.avroEDAUtils import getContainerEventSchema, getContainerKeySchema
+from avro_files.utils.avroEDAUtils import *
 
-print(" @@@ Executing script: ProduceAvroContainer.py")
+print(" @@@ Executing script: ProduceAvroMessage.py")
 
 ####################### READ ENV VARIABLES #######################
 # Try to read the Kafka broker from the environment variables
@@ -16,13 +16,8 @@ except KeyError:
 try:
     KAFKA_APIKEY = os.environ['KAFKA_APIKEY']
 except KeyError:
-    print("The KAFKA_APIKEY environment variable not set... assume local deployment")
-
-# Try to read the Kafka environment from the environment variables
-try:
-    KAFKA_ENV = os.environ['KAFKA_ENV']
-except KeyError:
-    KAFKA_ENV='LOCAL'
+    print("[ERROR] - The KAFKA_APIKEY environment variable needs to be set")
+    exit(1)
 
 # Try to read the schema registry url from the environment variables
 try:
@@ -31,57 +26,49 @@ except KeyError:
     print("[ERROR] - The SCHEMA_REGISTRY_URL environment variable needs to be set.")
     exit(1)
 
-# Try to read the data schemas location from the environment variables
-try:
-    DATA_SCHEMAS = os.environ['DATA_SCHEMAS']
-except KeyError:
-    print("[ERROR] - The DATA_SCHEMAS environment variable needs to be set.")
-    exit(1)
-
 
 ####################### VARIABLES #######################
 ID = "c01"
 TOPIC_NAME="test"
+DATA_SCHEMAS=os.getcwd() + "/../avro_files"
 
 ####################### Functions #######################
 # Create a default container
-def createContainer(id):
-   print('Creating container...', end ='')
-   data = {"containerID": id, 
-       "type": "Reefer", 
-       "status": "Empty",
-       "latitude": 37.80,
-       "longitude":  -122.25,
-       "capacity": 110, 
-       "brand": "itg-brand"}
-   containerEvent = {"containerID": id,"timestamp": int(time.time()),"type": "ContainerAdded","payload": data}
-   print("DONE")
-   return json.dumps(containerEvent)
+def createEvent():
+    print('Creating event...')
+    
+    event = {
+            "eventKey" : "1", 
+            "message" : "This is a test message"
+            }
+    
+    print("DONE")
+    
+    return json.dumps(event)
 
-# Parse arguments to get the Container ID
+# Parse arguments to get the kafka topic name
 def parseArguments():
-    global TOPIC_NAME, ID
+    global TOPIC_NAME
     print("The arguments for the script are: " , str(sys.argv))
-    if len(sys.argv) == 3:
-        ID = sys.argv[1]
-        TOPIC_NAME = sys.argv[2]
+    if len(sys.argv) == 2:
+        TOPIC_NAME = sys.argv[1]
     else:
-        print("[ERROR] - The ProduceAvroContainer.py script expects two arguments: The container ID and the topic to send the container event to.")
+        print("[ERROR] - The ProduceAvroMessage.py script expects one arguments: The Kafka topic to send the event to.")
         exit(1)
 
 
 ####################### MAIN #######################
 if __name__ == '__main__':
-    # Get the Container ID
+    # Get the Kafka topic name
     parseArguments()
-    # Get the avro schemas for the container key and value
-    container_event_value_schema = getContainerEventSchema(DATA_SCHEMAS)
-    container_event_key_schema = getContainerKeySchema(DATA_SCHEMAS)
-    # Create the container event and key to send
-    container_event = createContainer(ID)
+    # Get the avro schemas for the message's key and value
+    event_value_schema = getDefaultEventValueSchema(DATA_SCHEMAS)
+    event_key_schema = getDefaultEventKeySchema(DATA_SCHEMAS)
+    # Create the event
+    message_event = createEvent()
     print("--- Container event to be published: ---")
-    print(json.loads(container_event))
+    print(json.loads(message_event))
     print("----------------------------------------")
-    kp = KafkaProducer(KAFKA_ENV,KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
-    kp.prepareProducer("ProduceAvroContainerPython",container_event_key_schema,container_event_value_schema)
-    kp.publishEvent(TOPIC_NAME,container_event,"containerID")
+    kp = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
+    kp.prepareProducer("ProduceAvroContainerPython",event_key_schema,event_value_schema)
+    kp.publishEvent(TOPIC_NAME,message_event,"eventKey")

@@ -22,6 +22,18 @@ def getContainerKeySchemaES(schema_files_location):
   container_event_key_schema = LoadAvsc(schema_files_location + "/container_event_key_ES.avsc", known_schemas)
   return container_event_key_schema
 
+def getDefaultEventValueSchema(schema_files_location):
+  # Get the default event value data schema
+  known_schemas = avro.schema.Names()
+  default_event_value_schema = LoadAvsc(schema_files_location + "/default_value.avsc", known_schemas)
+  return default_event_value_schema
+
+def getDefaultEventKeySchema(schema_files_location):
+  # Get the default event key data schema
+  known_schemas = avro.schema.Names()
+  default_event_key_schema = LoadAvsc(schema_files_location + "/default_key.avsc", known_schemas)
+  return default_event_key_schema
+
 def LoadAvsc(file_path, names=None):
   # Load avsc file
   # file_path: path to schema file

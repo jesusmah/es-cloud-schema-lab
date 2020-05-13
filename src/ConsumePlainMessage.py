@@ -1,7 +1,7 @@
 import os,sys
 from kafka.KcConsumer import KafkaConsumer
 
-print(" @@@ Executing script: ConsumeContainers.py")
+print(" @@@ Executing script: ConsumePlainMessage.py")
 
 ####################### READ ENV VARIABLES #######################
 # Try to read the Kafka broker from the environment variables
@@ -15,36 +15,30 @@ except KeyError:
 try:
     KAFKA_APIKEY = os.environ['KAFKA_APIKEY']
 except KeyError:
-    print("The KAFKA_APIKEY environment variable not set... assume local deployment")
+    print("[ERROR] - The KAFKA_APIKEY environment variable needs to be set")
+    exit(1)
 
-# Try to read the Kafka environment from the environment variables
-try:
-    KAFKA_ENV = os.environ['KAFKA_ENV']
-except KeyError:
-    KAFKA_ENV='LOCAL'
-
-####################### VARIABLES #######################
-ID = "c01"
-TOPIC_NAME="test"
 
 ####################### FUNCTIONS #######################
-# Parse arguments to get the container ID to poll for
+# Parse arguments to get the Kafka topic
 def parseArguments():
-    global TOPIC_NAME, ID
-    print("The arguments for the script are: " , str(sys.argv))
-    if len(sys.argv) != 3:
-        print("[ERROR] - The ConsumeContainer.py script expects two arguments: The container ID and the topic to send the container event to.")
+    global TOPIC_NAME
+    print("The arguments for this script are: " , str(sys.argv))
+    if len(sys.argv) == 2:
+        TOPIC_NAME = sys.argv[1]
+    else:
+        print("[ERROR] - The ConsumePlainMessage.py script expects one argument: The Kafka topic to consume messages from")
         exit(1)
-    ID = sys.argv[1]
-    TOPIC_NAME = sys.argv[2]
-    print("The Kafka environment is: " + KAFKA_ENV)
-    print("The Kafka brokers are: " + KAFKA_BROKERS)
-    print("The Kafka API key is: " + KAFKA_APIKEY)
 
 ####################### MAIN #######################
 if __name__ == '__main__':
+    # Parse arguments to get the topic to read from
     parseArguments()
-    consumer = KafkaConsumer(KAFKA_ENV,KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME)
+    # Create a Kafka Consumer
+    consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME)
+    # Prespare the consumer
     consumer.prepareConsumer()
-    consumer.pollNextEvent(ID,'containerID')
+    # Poll for next message
+    consumer.pollNextEvent()
+    # Close the consumer
     consumer.close()
