@@ -6,8 +6,7 @@ from confluent_kafka.avro.serializer import SerializerError
 
 class KafkaConsumer:
 
-    def __init__(self, kafka_env = 'LOCAL', kafka_brokers = "", kafka_apikey = "", topic_name = "", schema_registry_url = "", autocommit = True):
-        self.kafka_env = kafka_env
+    def __init__(self, kafka_brokers = "", kafka_apikey = "", topic_name = "", schema_registry_url = "", autocommit = True):
         self.kafka_brokers = kafka_brokers
         self.kafka_apikey = kafka_apikey
         self.topic_name = topic_name
@@ -22,42 +21,38 @@ class KafkaConsumer:
                 'auto.offset.reset': 'earliest',
                 'schema.registry.url': self.schema_registry_url,
                 'enable.auto.commit': self.kafka_auto_commit,
+                'security.protocol': 'SASL_SSL',
+                'sasl.mechanisms': 'PLAIN',
+                'sasl.username': 'token',
+                'sasl.password': self.kafka_apikey
         }
-        if (self.kafka_env != 'LOCAL'):
-            options['security.protocol'] = 'SASL_SSL'
-            options['sasl.mechanisms'] = 'PLAIN'
-            options['sasl.username'] = 'token'
-            options['sasl.password'] = self.kafka_apikey
-        if (self.kafka_env == 'OCP'):
-            options['ssl.ca.location'] = os.environ['PEM_CERT']
-            options['schema.registry.ssl.ca.location'] = os.environ['PEM_CERT']
-        print("This is the configuration for the consumer:")
+        # Print the configuration
+        print("This is the configuration for the avro consumer:")
         print(options)
+        # Create the Avro consumer
         self.consumer = AvroConsumer(options)
+        # Subscribe to the topic
         self.consumer.subscribe([self.topic_name])
     
     def traceResponse(self, msg):
-        print('@@@ pollNextOrder {} partition: [{}] at offset {} with key {}:\n\tvalue: {}'
+        print('@@@ Next Message {} partition: [{}] at offset {} with key {}:\n\tvalue: {}'
                     .format(msg.topic(), msg.partition(), msg.offset(), msg.key(), msg.value() ))
 
-    def pollNextEvent(self, keyID, keyname):
-        gotIt = False
-        while not gotIt:
-            try:
-                msg = self.consumer.poll(timeout=10.0)
-            except SerializerError as e:
-                print("Message deserialization failed for {}: {}".format(msg, e))
-                break
-            if msg is None:
-                continue
-            if msg.error():
-                print("Consumer error: {}".format(msg.error()))
-                if ("PARTITION_EOF" in msg.error()):
-                    gotIt= True
-                continue
-            self.traceResponse(msg)
-            if (msg.key() == keyID):
-                gotIt = True
+    # Polls for next event
+    def pollNextEvent(self):
+        # Poll for messages
+        msg = self.consumer.poll(timeout=10.0)
+        # Validate the returned message
+        if msg is None:
+            print("[KafkaAvroConsumer] - No new messages on the topic")
+        elif msg.error():
+            if ("PARTITION_EOF" in msg.error()):
+                print("[KafkaAvroConsumer] - End of partition")
+            else:
+                print("[KafkaAvroConsumer] - Consumer error: {}".format(msg.error()))
+        else:
+            # Print the message
+            msgStr = self.traceResponse(msg)
     
     def close(self):
         self.consumer.close()

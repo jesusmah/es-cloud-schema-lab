@@ -7,7 +7,8 @@ ENV PYTHONPATH=/home:/tmp/lab
 RUN pip install --upgrade pip \
   && pip install --user pipenv requests black pytest numpy pandas confluent_kafka asyncio flask
 # Install the following avro version due to the following bug: https://github.com/confluentinc/confluent-kafka-python/issues/610
-RUN python -mpip install --user avro-python3==1.8.2
+# RUN python -mpip install --user avro-python3==1.8.2
+RUN python -mpip install --user avro-python3
 
 # Install kaf CLI (https://github.com/birdayz/kaf)
 # RUN curl https://raw.githubusercontent.com/birdayz/kaf/master/godownloader.sh | BINDIR=/usr/local/bin bash

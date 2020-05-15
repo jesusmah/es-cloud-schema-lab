@@ -25,7 +25,7 @@ def createEvent():
     print('Creating event...')
     
     event = {
-            "eventKey" : "1", 
+            "eventKey" : "2", 
             "message" : "This is a test message"
             }
     

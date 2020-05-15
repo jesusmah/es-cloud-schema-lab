@@ -1,13 +1,5 @@
-{   
+{
     "namespace": "ibm.eda.default",
-    "doc": "Default Message's key Avro data schema. It simply defines the key for the default messages is a string called eventKey",
-    "type":"record",
-    "name":"defaultKey",
-    "fields":[
-            {
-                "name": "eventKey",
-                "type":"string",
-                "doc": "We expect any string as the event key"
-            }
-     ]
+    "name": "defaultKey",
+    "type": "string"
 }

@@ -26,10 +26,7 @@ except KeyError:
     print("[ERROR] - The SCHEMA_REGISTRY_URL environment variable needs to be set.")
     exit(1)
 
-
 ####################### VARIABLES #######################
-ID = "c01"
-TOPIC_NAME="test"
 DATA_SCHEMAS=os.getcwd() + "/../avro_files"
 
 ####################### Functions #######################
@@ -66,9 +63,13 @@ if __name__ == '__main__':
     event_key_schema = getDefaultEventKeySchema(DATA_SCHEMAS)
     # Create the event
     message_event = createEvent()
+    # Print out the event to be sent
     print("--- Container event to be published: ---")
     print(json.loads(message_event))
     print("----------------------------------------")
+    # Create the Kafka Avro Producer
     kp = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
-    kp.prepareProducer("ProduceAvroContainerPython",event_key_schema,event_value_schema)
+    # Prepare the Kafka Avro Producer
+    kp.prepareProducer("ProduceAvroMessagePython",event_key_schema,event_value_schema)
+    # Publish the event
     kp.publishEvent(TOPIC_NAME,message_event,"eventKey")

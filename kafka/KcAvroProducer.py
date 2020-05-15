@@ -20,9 +20,10 @@ class KafkaProducer:
                 'sasl.password': self.kafka_apikey
         }
         # Print out the configuration
-        print("--- This is the configuration for the producer: ---")
+        print("--- This is the configuration for the avro producer: ---")
         print(options)
         print("---------------------------------------------------")
+        # Create the Avro Producer
         self.producer = AvroProducer(options,default_key_schema=key_schema,default_value_schema=value_schema)
 
     def delivery_report(self,err, msg):
@@ -33,6 +34,8 @@ class KafkaProducer:
             print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
 
     def publishEvent(self, topicName, value, key):
+        # Produce the Avro message
         # Important: value DOES NOT come in JSON format from ContainerAvroProducer.py. Therefore, we must convert it to JSON format first
         self.producer.produce(topic=topicName,value=json.loads(value),key=json.loads(value)[key], callback=self.delivery_report)
+        # Flush
         self.producer.flush()
