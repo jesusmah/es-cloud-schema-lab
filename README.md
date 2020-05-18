@@ -1,25 +1,47 @@
-# IBM Event Streams on IBM Cloud Schema Registry lab
+# IBM Event Streams on IBM Cloud lab
 
-This documentation aims to be a introductory hands-on lab on IBM Event Streams on IBM Cloud Schema Registry where we will go through the different capabilities of the Schema Registry that is available for IBM Event Streams on IBM Cloud users.
+This documentation aims to be a introductory hands-on lab on IBM Event Streams on IBM Cloud with special interest in the Schema Registry feature.
 
-![diagram](images/EDA-avro-schema-registry.png)
+This lab is divided in different sections, going from a more introductory and exploration level into understanding how the Schema Registry feature works. Please, feel free to jump into the section that most interests you but bear in mind that some sections rely on the previous sections status, configuration, etc.
+
 
 ## Index
 
-* [Requirements](#requirements)
-* [Explore](#explore)
-* [Topics](#topics)
-* [API Key](#api-key)
-* [Kafdrop](#kafdrop)
-* [Python Demo Environment](#python-demo-environment)
-* [Python Producer](#python-producer)
-* [Python Consumer](#python-consumer)
-* [Messages](#messages)
-* [Schema Registry](#schema-registry)
-* [Schemas](#schemas)
-* [Messages and Schemas](#messages-and-schemas)
-* [Data Evolution](#data-evolution)
-* [Access Management](#access-management)
+### Section 1
+
+This section consist of the requirements to carry out this lab, a quick exploration of our IBM Event Streams on IBM Cloud instance and a quick into on Kafka topics.
+
+* [Requirements](#requirements) - Requirements needed to carry out this lab. This includes an IBM Cloud account, an IBM Event Streams instance and other tools for the lab.
+* [Explore](#explore) - Explore the IBM Event Streams on IBM Cloud instance both through the UI and CLI
+* [Topics](#topics) - Work with topics in IBM Event Streams.
+
+### Section 2
+
+This section consist of preparing the IBM Event Strems instance to allow applications and tools to connect and work with it. We also present Kafdrop, an open source tool to visualize your kafka cluster.
+
+* [IBM Event Streams Service Credentials](#ibm-event-streams-service-credentials) - Credentials needed by applications, tools and script to interact with out IBM Event Streams instance.
+* [Kafdrop](#kafdrop) - Open Source tool to provide a UI to explore a kafka cluster.
+
+### Section 3
+
+In this section we start with the fun. First, we present the python demo environment and the applications that will allow us to produce and consume messages to and from our IBM Event Streams instance. Then, we play with these to produce and consume messages
+
+* [Python Demo Environment](#python-demo-environment) - A python environment to execute the python applications in this tutorial against your IBM Event Streams instance which will allow you to send and receive messages.
+* [Python Producer](#python-producer) - The python application that will allow you to produce plain messages to your IBM Event Streams instance.
+* [Python Consumer](#python-consumer) - The python application that will allow you to consume plain messages from your IBM Event Streams instance.
+* [Messages](#messages) - Produce and consume messages to and from your IBM Event Streams instance.
+
+### Section 4
+
+This is the IBM Event Streams on IBM Cloud Schema Registry section! In this section we will dive deep into what the schema registry is, how it works, how to construct schemas and use another couple of python apps to be able to play with schemas and messages. Finally, we talk about data evolution with Avro data schemas and how schemas and compatibility rules are secured.
+
+* [Schema Registry](#schema-registry) - Introduction to the IBM Event Streams on IBM Cloud Schema Registry feature.
+* [Schemas](#schemas) - Work with Apache Avro data schemas and the schema registry. Understand how schemas are created, registered, versioned, etc
+* [Python Avro Producer](#python-avro-producer) - Python application to produce messages compliying with its Avro data schema.
+* [Python Avro Consumer](#python-avro-consumer) - Python application to consume messages compliying with its Avro data schema.
+* [Schemas and Messages](#schemas-and-messages) - Play with messages and schemas.
+* [Data Evolution](#data-evolution) - How to evolve your schemas along with your data.
+* [Security](#securitty) - Learn how to secure your schemas and compatibility modes in the IBM Event Streams Schema Registry.
 
 ## Requirements
 
@@ -315,9 +337,9 @@ In this section we are going to see how to create, list and delete topics both u
 
 	![16-1](images/7.png)
 
-## API Key
+## IBM Event Streams Service Credentials
 
-At this point, we want to create an API key for other applications, tools, scripts to interact with our IBM Event Streams instance.
+At this point, we want to create the needed service credentials in order to allow other applications, tools, scripts to interact with our IBM Event Streams instance. For doing so, we need to:
 
 1. In your IBM Event Streams instance service page, click on _Service credentials_ on the left hand side menu:
 
@@ -531,14 +553,15 @@ The python script that we will use to send a message to a Kafka topic is [Produc
 		# Create the event to be sent
 		event = createEvent()
 		# Print it out
-		print("Event to be published:")
+		print("--- Event to be published: ---")
 		print(event)
+		print("----------------------------------------")
 		# Create the Kafka Producer
-		kp = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY)
+		kafka_producer = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY)
 		# Prepare the Kafka Producer
-		kp.prepareProducer("ProducePlainMessagePython")
+		kafka_producer.prepareProducer("ProducePlainMessagePython")
 		# Publish the event
-		kp.publishEvent(TOPIC_NAME,event,"eventKey")
+		kafka_producer.publishEvent(TOPIC_NAME,event,"eventKey")
 	```
 
 As you can see, this python code depends on a Kafka Producer which is explained next.
@@ -557,7 +580,6 @@ This script, called [KcProducer.py](kafka/KcProducer.py), will actually be the r
 			self.kafka_apikey = kafka_apikey
 
 		def prepareProducer(self,groupID = "pythonproducers"):
-			# Configure the Kafka Producer (https://docs.confluent.io/current/clients/confluent-kafka-python/#kafka-client-configuration)
 			options ={
 					'bootstrap.servers':  self.kafka_brokers,
 					'group.id': groupID,
@@ -567,8 +589,9 @@ This script, called [KcProducer.py](kafka/KcProducer.py), will actually be the r
 					'sasl.password': self.kafka_apikey
 			}
 			# Print out the configuration
-			print("[KafkaProducer] - This is the configuration for the producer:")
-			print('[KafkaProducer] - {}'.format(options))
+			print("--- This is the configuration for the producer: ---")
+			print(options)
+			print("---------------------------------------------------")
 			# Create the producer
 			self.producer = Producer(options)
 	```
@@ -612,11 +635,13 @@ In order to send a message then, we need to:
 	The arguments for this script are:  ['producePlainMessage.py', 'test']
 	Creating event...
 	DONE
-	Event to be published:
+	--- Event to be published: ---
 	{'eventKey': '1', 'timestamp': 1589297817, 'message': 'This is a test message'}
-	[KafkaProducer] - This is the configuration for the producer:
-	[KafkaProducer] - {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaProducer] - Message delivered to test [0]
+	----------------------------------------
+	--- This is the configuration for the producer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	Message delivered to test [0]
 	```
 
 1. Use your [kafrop](#kafdrop) instance running on your local workstation at <http://localhost:9000/> to ensure, apart from the output on the previous step, that the message got delivered to your topic
@@ -652,16 +677,16 @@ The python script that we will use to consume a message from a Kafka topic is [C
 
 	```python
 	if __name__ == '__main__':
-    	# Parse arguments to get the topic to read from
-    	parseArguments()
-    	# Create a Kafka Consumer
-    	consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME)
-    	# Prespare the consumer
-    	consumer.prepareConsumer()
-    	# Poll for next message
-    	consumer.pollNextEvent()
-    	# Close the consumer
-    	consumer.close()
+		# Parse arguments to get the topic to read from
+		parseArguments()
+		# Create a Kafka Consumer
+		kafka_consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME)
+		# Prespare the consumer
+		kafka_consumer.prepareConsumer()
+		# Poll for next message
+		kafka_consumer.pollNextEvent()
+		# Close the consumer
+		kafka_consumer.close()
 	```
 
 As you can see, this python code depends on a Kafka Consumer which is explained next.
@@ -695,7 +720,9 @@ This script, called [KcConsumer.py](kafka/KcConsumer.py), will actually be the r
 					'sasl.password': self.kafka_apikey
 			}
 			# Print the configuration
-			print('[KafkaConsumer] - Configuration: {}'.format(options))
+			print("--- This is the configuration for the consumer: ---")
+			print(options)
+			print("---------------------------------------------------")
 			# Create the consumer
 			self.consumer = Consumer(options)
 			# Subscribe to the topic
@@ -708,7 +735,7 @@ This script, called [KcConsumer.py](kafka/KcConsumer.py), will actually be the r
 	# Prints out and returns the decoded events received by the consumer
 		def traceResponse(self, msg):
 			msgStr = msg.value().decode('utf-8')
-			print('[KafkaConsumer] - Next Message - {} partition: [{}] at offset {} with key {}:\n\tmessage: {}'
+			print('[Message] - Next Message consumed from {} partition: [{}] at offset {} with key {}:\n\tmessage: {}'
 						.format(msg.topic(), msg.partition(), msg.offset(), str(msg.key()), msgStr ))
 			return msgStr
 
@@ -718,12 +745,12 @@ This script, called [KcConsumer.py](kafka/KcConsumer.py), will actually be the r
 			msg = self.consumer.poll(timeout=10.0)
 			# Validate the returned message
 			if msg is None:
-				print("[KafkaConsumer] - No new messages on the topic")
+				print("[INFO] - No new messages on the topic")
 			elif msg.error():
 				if ("PARTITION_EOF" in msg.error()):
-					print("[KafkaConsumer] - End of partition")
+					print("[INFO] - End of partition")
 				else:
-					print("[KafkaConsumer] - Consumer error: {}".format(msg.error()))
+					print("[ERROR] - Consumer error: {}".format(msg.error()))
 			else:
 				# Print the message
 				msgStr = self.traceResponse(msg)
@@ -751,11 +778,13 @@ In order to consume a message then, we need to:
 1. Execute the `ConsumePlainMessage.py` script
 
 	```python
-	python ConsumePlainMessage.py test
+	# python ConsumePlainMessage.py test
 	@@@ Executing script: ConsumePlainMessage.py
 	The arguments for this script are:  ['ConsumePlainMessage.py', 'test']
-	[KafkaConsumer] - Configuration: {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaConsumer] - Next Message - test partition: [0] at offset 0 with key b'1':
+	--- This is the configuration for the consumer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	[Message] - Next Message consumed from [0] at offset 0 with key b'1':
 		message: {"eventKey": "1", "timestamp": 1589297817, "message": "This is a test message"}
 	```
 
@@ -775,33 +804,39 @@ Even though we have already sent and read messages to and from our IBM Event Str
 	The arguments for this script are:  ['ProducePlainMessage.py', 'test']
 	Creating event...
 	DONE
-	Event to be published:
+	--- Event to be published: ---
 	{'eventKey': '1', 'message': 'This is a test message'}
-	[KafkaProducer] - This is the configuration for the producer:
-	[KafkaProducer] - {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaProducer] - Message delivered to test [0]
+	----------------------------------------
+	--- This is the configuration for the producer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	Message delivered to test [0]
 
 	root@c59606877246:/tmp/lab/src# python ProducePlainMessage.py test
 	@@@ Executing script: producePlainMessage.py
 	The arguments for this script are:  ['ProducePlainMessage.py', 'test']
 	Creating event...
 	DONE
-	Event to be published:
+	--- Event to be published: ---
 	{'eventKey': '24503', 'timestamp': 1589365932.1655052, 'eventType': 'location', 'payload': {'train_id': 24503, 'longitude': 37.8, 'latitude': -122.25, 'ETA': 1589395932.1655164}}
-	[KafkaProducer] - This is the configuration for the producer:
-	[KafkaProducer] - {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaProducer] - Message delivered to test [0]
+	----------------------------------------
+	--- This is the configuration for the producer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	Message delivered to test [0]
 
 	root@c59606877246:/tmp/lab/src# python ProducePlainMessage.py test
 	@@@ Executing script: producePlainMessage.py
 	The arguments for this script are:  ['ProducePlainMessage.py', 'test']
 	Creating event...
 	DONE
-	Event to be published:
+	--- Event to be published: ---
 	{'eventKey': '13820', 'timestamp': 1589366141.7558436, 'eventType': 'speed', 'payload': {'camera_id': 13820, 'longitude': 95.1, 'latitude': -20.94, 'plate': '2048 BTL', 'speed': 147.5, 'road_id': 'N345', 'location': 'Paris'}}
-	[KafkaProducer] - This is the configuration for the producer:
-	[KafkaProducer] - {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaProducer] - Message delivered to test [0]
+	----------------------------------------
+	--- This is the configuration for the producer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ProducePlainMessagePython', 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	Message delivered to test [0]
 	```
 
 2. Read those events by using `ConsumePlainMessages.py`:
@@ -810,22 +845,28 @@ Even though we have already sent and read messages to and from our IBM Event Str
 	root@c59606877246:/tmp/lab/src# python ConsumePlainMessage.py test
 	@@@ Executing script: ConsumePlainMessage.py
 	The arguments for this script are:  ['ConsumePlainMessage.py', 'test']
-	[KafkaConsumer] - Configuration: {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaConsumer] - Next Message - test partition: [0] at offset 0 with key b'1':
+	--- This is the configuration for the consumer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	[Message] - Next Message consumed from test partition: [0] at offset 0 with key b'1':
 		message: {"eventKey": "1", "message": "This is a test message"}
 		
 	root@c59606877246:/tmp/lab/src# python ConsumePlainMessage.py test
 	@@@ Executing script: ConsumePlainMessage.py
 	The arguments for this script are:  ['ConsumePlainMessage.py', 'test']
-	[KafkaConsumer] - Configuration: {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaConsumer] - Next Message - test partition: [0] at offset 1 with key b'24503':
+	--- This is the configuration for the consumer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	[Message] - Next Message consumed from test partition: [0] at offset 1 with key b'24503':
 		message: {"eventKey": "24503", "timestamp": 1589365932.1655052, "eventType": "location", "payload": {"train_id": 24503, "longitude": 37.8, "latitude": -122.25, "ETA": 1589395932.1655164}}
 
 	root@c59606877246:/tmp/lab/src# python ConsumePlainMessage.py test
 	@@@ Executing script: ConsumePlainMessage.py
 	The arguments for this script are:  ['ConsumePlainMessage.py', 'test']
-	[KafkaConsumer] - Configuration: {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-	[KafkaConsumer] - Next Message - test partition: [0] at offset 2 with key b'13820':
+	--- This is the configuration for the consumer: ---
+	{'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'ConsumePlainMessagePython', 'auto.offset.reset': 'earliest', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
+	---------------------------------------------------
+	[Message] - Next Message consumed from test partition: [0] at offset 2 with key b'13820':
 		message: {"eventKey": "13820", "timestamp": 1589366141.7558436, "eventType": "speed", "payload": {"camera_id": 13820, "longitude": 95.1, "latitude": -20.94, "plate": "2048 BTL", "speed": 147.5, "road_id": "N345", "location": "Paris"}}
 	```
 
@@ -840,6 +881,8 @@ To address the necessity on a common language (that is, the type of events and w
 ## Schema Registry
 
 (**IMPORTANT:** The following documentation about the IBM Event Streams on IBM Cloud Schema registry until the end of this lab is based on the Schema Registry status as of mid May 2020 when this tutorial was developed)
+
+![diagram](images/EDA-avro-schema-registry.png)
 
 One of the most common technologies used in the industry these days to define, serialize and deserialize messages flowing through your Kafka topics is Apache Avro (<https://avro.apache.org/docs/current/>). To learn more about Apache Avro, how to define Apache Avro data schemas and more see our documentation [here](https://ibm-cloud-architecture.github.io/refarch-kc/avro/avro)
 
@@ -1185,11 +1228,11 @@ The python script that we will use to send an avro message to a Kafka topic is [
 		print(json.loads(message_event))
 		print("----------------------------------------")
 		# Create the Kafka Avro Producer
-		kp = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
+		kafka_producer = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
 		# Prepare the Kafka Avro Producer
-		kp.prepareProducer("ProduceAvroMessagePython",event_key_schema,event_value_schema)
+		kafka_producer.prepareProducer("ProduceAvroMessagePython",event_key_schema,event_value_schema)
 		# Publish the event
-		kp.publishEvent(TOPIC_NAME,message_event,"eventKey")
+		kafka_producer.publishEvent(TOPIC_NAME,message_event,"eventKey")
 	```
 
 As you can see, this python code depends on a Kafka Avro Producer and an Avro Utils for loading the Avro schemas which are explained next.
@@ -1307,13 +1350,13 @@ The python script that we will use to consume an Avro message from a Kafka topic
 		# Parse arguments
 		parseArguments()
 		# Create the Kafka Avro consumer
-		consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME,SCHEMA_REGISTRY_URL)
+		kafka_consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME,SCHEMA_REGISTRY_URL)
 		# Prepare the consumer
-		consumer.prepareConsumer()
+		kafka_consumer.prepareConsumer()
 		# Consume next Avro event
-		consumer.pollNextEvent()
+		kafka_consumer.pollNextEvent()
 		# Close the Avro consumer
-		consumer.close()
+		kafka_consumer.close()
 	```
 
 As you can see, this python code depends on a Kafka Consumer which is explained next.
@@ -1348,8 +1391,9 @@ This script, called [KcAvroConsumer.py](kafka/KcAvroConsumer.py), will actually 
 					'sasl.password': self.kafka_apikey
 			}
 			# Print the configuration
-			print("This is the configuration for the avro consumer:")
-			print(options)
+			print("--- This is the configuration for the Avro consumer: ---")
+        	print(options)
+        	print("---------------------------------------------------")
 			# Create the Avro consumer
 			self.consumer = AvroConsumer(options)
 			# Subscribe to the topic
@@ -1370,12 +1414,12 @@ This script, called [KcAvroConsumer.py](kafka/KcAvroConsumer.py), will actually 
 		msg = self.consumer.poll(timeout=10.0)
 		# Validate the returned message
 		if msg is None:
-			print("[KafkaAvroConsumer] - No new messages on the topic")
+			print("[INFO] - No new messages on the topic")
 		elif msg.error():
 			if ("PARTITION_EOF" in msg.error()):
-				print("[KafkaAvroConsumer] - End of partition")
+				print("[INFO] - End of partition")
 			else:
-				print("[KafkaAvroConsumer] - Consumer error: {}".format(msg.error()))
+				print("[ERROR] - Consumer error: {}".format(msg.error()))
 		else:
 			# Print the message
 			msgStr = self.traceResponse(msg)
@@ -1545,7 +1589,7 @@ $ curl -s -u token:$APIKEY $URL/artifacts/test-value | jq .
 
 Now, we are trying to send a non-compliant message according to the Avro data schema we have for our events. Im going to try to send the following event:
 
-```json
+```shell
 {
 	'eventKey': '1',
 	'message': 'This is a test message',
@@ -1620,27 +1664,29 @@ In order to consume a message, we execute the `ConsumeAvroMessage.py` within the
 # python ConsumeAvroMessage.py test
  @@@ Executing script: ConsumeAvroMessage.py
 The arguments for the script are:  ['ConsumeAvroMessage.py', 'test']
-This is the configuration for the avro consumer:
+--- This is the configuration for the Avro consumer: ---
 {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'pythonconsumers', 'auto.offset.reset': 'earliest', 'schema.registry.url': 'https://token:4uk9gZ-n85a2esMoMZ5wtW-yIq_29o3PrHVBEFBj67N0@mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud/confluent', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-@@@ Next Message - test partition: [0] at offset 0 with key 1:
+---------------------------------------------------
+[Message] - Next message consumed from test partition: [0] at offset 0 with key 1:
 	value: {'eventKey': '1', 'message': 'This is a test message'}
 
 # python ConsumeAvroMessage.py test
  @@@ Executing script: ConsumeAvroMessage.py
 The arguments for the script are:  ['ConsumeAvroMessage.py', 'test']
-This is the configuration for the avro consumer:
+--- This is the configuration for the Avro consumer: ---
 {'bootstrap.servers': 'kafka-2.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-1.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093,kafka-0.mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud:9093', 'group.id': 'pythonconsumers', 'auto.offset.reset': 'earliest', 'schema.registry.url': 'https://token:4uk9gZ-n85a2esMoMZ5wtW-yIq_29o3PrHVBEFBj67N0@mh-tcqsppdpzlrkdmkbgmgl-4c201a12d7add7c99d2b22e361c6f175-0000.eu-de.containers.appdomain.cloud/confluent', 'enable.auto.commit': True, 'security.protocol': 'SASL_SSL', 'sasl.mechanisms': 'PLAIN', 'sasl.username': 'token', 'sasl.password': '*****'}
-@@@ Next Message - test partition: [0] at offset 1 with key 1:
+---------------------------------------------------
+[Message] - Next message consumed from test partition: [0] at offset 1 with key 1:
 	value: {'eventKey': '1', 'message': 'This is a test message', 'anotherAttribute': 'This is another atttribute'}
 ```
 
 As you can see, our script was able to read the Avro messages from the `test` topic and map that back to their original structure thanks to the Avro schemas:
 
 ```shell
-@@@ Next Message - test partition: [0] at offset 0 with key 1:
+[Message] - Next message consumed from test partition: [0] at offset 0 with key 1:
 	value: {'eventKey': '1', 'message': 'This is a test message'}
 
-@@@ Next Message - test partition: [0] at offset 1 with key 1:
+[Message] - Next message consumed from - test partition: [0] at offset 1 with key 1:
 	value: {'eventKey': '1', 'message': 'This is a test message', 'anotherAttribute': 'This is another atttribute'}
 ```
 

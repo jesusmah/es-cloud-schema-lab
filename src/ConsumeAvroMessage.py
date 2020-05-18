@@ -29,9 +29,9 @@ except KeyError:
 # Parse arguments to get the container ID to poll for
 def parseArguments():
     global TOPIC_NAME
-    print("The arguments for the script are: " , str(sys.argv))
+    print("The arguments for this script are: " , str(sys.argv))
     if len(sys.argv) != 2:
-        print("[ERROR] - The ConsumeAvroMessage.py script expects one arguments: The Kafka topic to events from.")
+        print("[ERROR] - The ConsumeAvroMessage.py script expects one arguments: The Kafka topic to consume messages from.")
         exit(1)
     TOPIC_NAME = sys.argv[1]
 
@@ -40,10 +40,10 @@ if __name__ == '__main__':
     # Parse arguments
     parseArguments()
     # Create the Kafka Avro consumer
-    consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME,SCHEMA_REGISTRY_URL)
+    kafka_consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME,SCHEMA_REGISTRY_URL)
     # Prepare the consumer
-    consumer.prepareConsumer()
+    kafka_consumer.prepareConsumer()
     # Consume next Avro event
-    consumer.pollNextEvent()
+    kafka_consumer.pollNextEvent()
     # Close the Avro consumer
-    consumer.close()
+    kafka_consumer.close()

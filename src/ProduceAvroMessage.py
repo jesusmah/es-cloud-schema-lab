@@ -64,12 +64,12 @@ if __name__ == '__main__':
     # Create the event
     message_event = createEvent()
     # Print out the event to be sent
-    print("--- Container event to be published: ---")
+    print("--- Event to be published: ---")
     print(json.loads(message_event))
     print("----------------------------------------")
     # Create the Kafka Avro Producer
-    kp = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
+    kafka_producer = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY,SCHEMA_REGISTRY_URL)
     # Prepare the Kafka Avro Producer
-    kp.prepareProducer("ProduceAvroMessagePython",event_key_schema,event_value_schema)
+    kafka_producer.prepareProducer("ProduceAvroMessagePython",event_key_schema,event_value_schema)
     # Publish the event
-    kp.publishEvent(TOPIC_NAME,message_event,"eventKey")
+    kafka_producer.publishEvent(TOPIC_NAME,message_event,"eventKey")

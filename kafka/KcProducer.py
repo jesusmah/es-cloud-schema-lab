@@ -18,17 +18,18 @@ class KafkaProducer:
                 'sasl.password': self.kafka_apikey
         }
         # Print out the configuration
-        print("[KafkaProducer] - This is the configuration for the producer:")
-        print('[KafkaProducer] - {}'.format(options))
+        print("--- This is the configuration for the producer: ---")
+        print(options)
+        print("---------------------------------------------------")
         # Create the producer
         self.producer = Producer(options)
 
     def delivery_report(self,err, msg):
         """ Called once for each message produced to indicate delivery result. Triggered by poll() or flush(). """
         if err is not None:
-            print('[ERROR] - [KafkaProducer] - Message delivery failed: {}'.format(err))
+            print('[ERROR] - Message delivery failed: {}'.format(err))
         else:
-            print('[KafkaProducer] - Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
+            print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
 
     def publishEvent(self, topicName, eventToSend, keyName):
         # Print the event to send

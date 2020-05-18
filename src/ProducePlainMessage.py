@@ -50,11 +50,12 @@ if __name__ == '__main__':
     # Create the event to be sent
     event = createEvent()
     # Print it out
-    print("Event to be published:")
+    print("--- Event to be published: ---")
     print(event)
+    print("----------------------------------------")
     # Create the Kafka Producer
-    kp = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY)
+    kafka_producer = KafkaProducer(KAFKA_BROKERS,KAFKA_APIKEY)
     # Prepare the Kafka Producer
-    kp.prepareProducer("ProducePlainMessagePython")
+    kafka_producer.prepareProducer("ProducePlainMessagePython")
     # Publish the event
-    kp.publishEvent(TOPIC_NAME,event,"eventKey")
+    kafka_producer.publishEvent(TOPIC_NAME,event,"eventKey")

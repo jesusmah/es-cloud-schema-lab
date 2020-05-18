@@ -27,15 +27,16 @@ class KafkaConsumer:
                 'sasl.password': self.kafka_apikey
         }
         # Print the configuration
-        print("This is the configuration for the avro consumer:")
+        print("--- This is the configuration for the Avro consumer: ---")
         print(options)
+        print("---------------------------------------------------")
         # Create the Avro consumer
         self.consumer = AvroConsumer(options)
         # Subscribe to the topic
         self.consumer.subscribe([self.topic_name])
     
     def traceResponse(self, msg):
-        print('@@@ Next Message {} partition: [{}] at offset {} with key {}:\n\tvalue: {}'
+        print('[Message] - Next message consumed from {} partition: [{}] at offset {} with key {}:\n\tvalue: {}'
                     .format(msg.topic(), msg.partition(), msg.offset(), msg.key(), msg.value() ))
 
     # Polls for next event
@@ -44,12 +45,12 @@ class KafkaConsumer:
         msg = self.consumer.poll(timeout=10.0)
         # Validate the returned message
         if msg is None:
-            print("[KafkaAvroConsumer] - No new messages on the topic")
+            print("[INFO] - No new messages on the topic")
         elif msg.error():
             if ("PARTITION_EOF" in msg.error()):
-                print("[KafkaAvroConsumer] - End of partition")
+                print("[INFO] - End of partition")
             else:
-                print("[KafkaAvroConsumer] - Consumer error: {}".format(msg.error()))
+                print("[ERROR] - Consumer error: {}".format(msg.error()))
         else:
             # Print the message
             msgStr = self.traceResponse(msg)

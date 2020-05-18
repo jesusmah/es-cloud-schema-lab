@@ -24,7 +24,9 @@ class KafkaConsumer:
                 'sasl.password': self.kafka_apikey
         }
         # Print the configuration
-        print('[KafkaConsumer] - Configuration: {}'.format(options))
+        print("--- This is the configuration for the consumer: ---")
+        print(options)
+        print("---------------------------------------------------")
         # Create the consumer
         self.consumer = Consumer(options)
         # Subscribe to the topic
@@ -33,9 +35,8 @@ class KafkaConsumer:
     # Prints out and returns the decoded events received by the consumer
     def traceResponse(self, msg):
         msgStr = msg.value().decode('utf-8')
-        print('[KafkaConsumer] - Next Message - {} partition: [{}] at offset {} with key {}:\n\tmessage: {}'
+        print('[Message] - Next Message consumed from {} partition: [{}] at offset {} with key {}:\n\tmessage: {}'
                     .format(msg.topic(), msg.partition(), msg.offset(), str(msg.key()), msgStr ))
-        return msgStr
 
     # Polls for next event
     def pollNextEvent(self):
@@ -43,12 +44,12 @@ class KafkaConsumer:
         msg = self.consumer.poll(timeout=10.0)
         # Validate the returned message
         if msg is None:
-            print("[KafkaConsumer] - No new messages on the topic")
+            print("[INFO] - No new messages on the topic")
         elif msg.error():
             if ("PARTITION_EOF" in msg.error()):
-                print("[KafkaConsumer] - End of partition")
+                print("[INFO] - End of partition")
             else:
-                print("[KafkaConsumer] - Consumer error: {}".format(msg.error()))
+                print("[ERROR] - Consumer error: {}".format(msg.error()))
         else:
             # Print the message
             msgStr = self.traceResponse(msg)

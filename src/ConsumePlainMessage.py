@@ -35,10 +35,10 @@ if __name__ == '__main__':
     # Parse arguments to get the topic to read from
     parseArguments()
     # Create a Kafka Consumer
-    consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME)
+    kafka_consumer = KafkaConsumer(KAFKA_BROKERS,KAFKA_APIKEY,TOPIC_NAME)
     # Prespare the consumer
-    consumer.prepareConsumer()
+    kafka_consumer.prepareConsumer()
     # Poll for next message
-    consumer.pollNextEvent()
+    kafka_consumer.pollNextEvent()
     # Close the consumer
-    consumer.close()
+    kafka_consumer.close()
